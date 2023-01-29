@@ -4,14 +4,66 @@
 #include <sstream>
 #include <thread>
 
-#include "get_number_of_escape_iterations.hpp"
+#include "include.hpp"
 
 void process_input(mpf_class *x_center, mpf_class *y_center,
-                   mpf_class *increment, mpf_class *zoom) {
+                   mpf_class *increment, mpf_class *zoom,
+                   size_t *MAX_ITERATIONS) {
+  char c;
+  bool input_string = false;
+  std::string input;
   while (true) {
+    if (input_string) {
+      move(LINES - 1, 0);
+      while ((c = getch()) != '\n')
+        input.push_back(c);
+      input_string = false;
+      int y, x;
+      getyx(stdscr, y, x);
+      move(y, 0);
+      clrtoeol();
+
+      // Process the request.
+      // First tokenize.
+      std::vector<std::string> tokens;
+      std::string token;
+      for (size_t i = 0; i < input.length(); i++) {
+        if (input[i] == ' ') {
+          if (!token.empty())
+            tokens.push_back(token);
+          token.clear();
+        } else
+          token.push_back(input[i]);
+      }
+      tokens.push_back(token);
+
+      if (!tokens.empty()) {
+        if (tokens[0] == "iterations" && tokens.size() >= 2) {
+          *MAX_ITERATIONS = std::stoul(tokens[1]);
+        }
+        if (tokens[0] == "render" && tokens.size() >= 2 &&
+            tokens[1].find('x') != std::string::npos) {
+          int width = std::stoi(tokens[1].substr(0, tokens[1].find('x')));
+          int height = std::stoi(
+              tokens[1].substr(tokens[1].find('x') + 1, tokens[1].length()));
+          std::string filename = "render.bmp";
+          if (tokens.size() >= 3)
+            filename = tokens[2];
+
+          render_frame(width, height, filename, *x_center, *y_center, *zoom,
+                       *MAX_ITERATIONS);
+        }
+      }
+
+      input.clear();
+    }
+
     move(0, 0);
-    char c = getch();
+    c = getch();
     switch (c) {
+    case ':':
+      input_string = true;
+      break;
     case 'w':
       *y_center += *increment;
       break;
@@ -65,7 +117,7 @@ int main(int argc, char **argv) {
 
   // Render the mandelbrot set
   std::thread input_handler(process_input, &x_center, &y_center, &increment,
-                            &zoom);
+                            &zoom, &MAX_ITERATIONS);
   while (true) {
     wclear(mandelbrot_set_render);
 
@@ -79,8 +131,9 @@ int main(int argc, char **argv) {
     for (int j = HEIGHT - 1; j >= 0; j--) {
       mpf_class x = x_start;
       for (int i = 0; i < WIDTH; i++) {
+        double abs_z = 1;
         size_t escape_iterations =
-            get_number_of_escape_iterations(x, y, MAX_ITERATIONS);
+            get_number_of_escape_iterations(x, y, MAX_ITERATIONS, abs_z);
 
         if (escape_iterations == MAX_ITERATIONS)
           wprintw(mandelbrot_set_render, "%s", "*");
