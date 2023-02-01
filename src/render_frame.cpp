@@ -38,9 +38,9 @@ void render_frame(int width, int height, std::string filename,
       RgbColor rgb_color = HsvToRgb(hsv_color);
 
       // Draw pixel.
-      image(i, j, 0, 0) = rgb_color.r;
-      image(i, j, 0, 1) = rgb_color.g;
-      image(i, j, 0, 2) = rgb_color.b;
+      image(i, height - j - 1, 0, 0) = rgb_color.r;
+      image(i, height - j - 1, 0, 1) = rgb_color.g;
+      image(i, height - j - 1, 0, 2) = rgb_color.b;
 
       x += increment;
     }
