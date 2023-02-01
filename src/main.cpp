@@ -6,9 +6,11 @@
 
 #include "include.hpp"
 
+bool update_information_in_main_loop = true;
+
 void process_input(mpf_class *x_center, mpf_class *y_center,
                    mpf_class *increment, mpf_class *zoom,
-                   size_t *MAX_ITERATIONS) {
+                   size_t *MAX_ITERATIONS, WINDOW *information) {
   char c;
   bool input_string = false;
   std::string input;
@@ -50,8 +52,12 @@ void process_input(mpf_class *x_center, mpf_class *y_center,
           if (tokens.size() >= 3)
             filename = tokens[2];
 
+          update_information_in_main_loop = false;
+
           render_frame(width, height, filename, *x_center, *y_center, *zoom,
-                       *MAX_ITERATIONS);
+                       *MAX_ITERATIONS, information);
+
+          update_information_in_main_loop = true;
         }
       }
 
@@ -117,7 +123,7 @@ int main(int argc, char **argv) {
 
   // Render the mandelbrot set
   std::thread input_handler(process_input, &x_center, &y_center, &increment,
-                            &zoom, &MAX_ITERATIONS);
+                            &zoom, &MAX_ITERATIONS, information);
   while (true) {
     wclear(mandelbrot_set_render);
 
@@ -145,18 +151,19 @@ int main(int argc, char **argv) {
       y -= increment;
     }
 
-    wclear(information);
-    wprintw(information, "%s%s%s%s%s%s%s%s%zu", "\n Information: \n   Real: ",
-            mpf_class_to_string(x_center).c_str(),
-            "\n   Imaginary: ", mpf_class_to_string(y_center).c_str(),
-            "\n   Zoom: ", mpf_class_to_string(zoom).c_str(), "x",
-            "\n   Max iterations: ", MAX_ITERATIONS);
-
     box(mandelbrot_set_render, 0, 0);
     box(information, 0, 0);
-    wrefresh(information);
-    wrefresh(mandelbrot_set_render);
-    refresh();
+    if (update_information_in_main_loop) {
+      wclear(information);
+      wprintw(information, "%s%s%s%s%s%s%s%s%zu", "\n Information: \n   Real: ",
+              mpf_class_to_string(x_center).c_str(),
+              "\n   Imaginary: ", mpf_class_to_string(y_center).c_str(),
+              "\n   Zoom: ", mpf_class_to_string(zoom).c_str(), "x",
+              "\n   Max iterations: ", MAX_ITERATIONS);
+      wrefresh(information);
+      wrefresh(mandelbrot_set_render);
+      refresh();
+    }
   }
 
   getch();

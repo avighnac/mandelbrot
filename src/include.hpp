@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <gmpxx.h>
+#include <ncurses.h>
 
 extern size_t get_number_of_escape_iterations(mpf_class Real,
                                               mpf_class Imaginary,
@@ -10,4 +11,5 @@ extern size_t get_number_of_escape_iterations(mpf_class Real,
 
 extern void render_frame(int width, int height, std::string filename,
                          mpf_class &x_center, mpf_class &y_center,
-                         mpf_class &zoom, size_t &MAX_ITERATIONS);
+                         mpf_class &zoom, size_t &MAX_ITERATIONS,
+                         WINDOW *information);

@@ -1,5 +1,6 @@
 #include <CImg.h>
 #include <gmpxx.h>
+#include <ncurses.h>
 #include <string>
 
 #include "color_conversion.hpp"
@@ -7,7 +8,7 @@
 
 void render_frame(int width, int height, std::string filename,
                   mpf_class &x_center, mpf_class &y_center, mpf_class &zoom,
-                  size_t &MAX_ITERATIONS) {
+                  size_t &MAX_ITERATIONS, WINDOW *information) {
   // Create an image of size width x height.
   cimg_library::CImg<unsigned char> image(width, height, 1, 3, 0);
 
@@ -18,9 +19,22 @@ void render_frame(int width, int height, std::string filename,
   mpf_class x_end = x_center + width / (height * zoom);
 
   mpf_class y = y_end;
+
+  double total_pixels = width * height;
+  int pixels_rendered = 0;
   for (int j = height - 1; j >= 0; j--) {
     mpf_class x = x_start;
     for (int i = 0; i < width; i++) {
+      pixels_rendered++;
+      int y_coord = height - j - 1;
+      double percent = pixels_rendered / total_pixels * 100;
+      wclear(information);
+      wprintw(information, "%s%d%s%d%s%d%s%d%s%f%s",
+              "\n Rendering frame!\n\n Dimensions: ", width, "x", height,
+              "\n Current x-coordinate: ", i,
+              "\n Current y-coordinate: ", y_coord,
+              "\n Percent finished: ", percent, "\n");
+      wrefresh(information);
       double abs_z = 1;
       size_t escape_iterations =
           get_number_of_escape_iterations(x, y, MAX_ITERATIONS, abs_z);
@@ -38,9 +52,9 @@ void render_frame(int width, int height, std::string filename,
       RgbColor rgb_color = HsvToRgb(hsv_color);
 
       // Draw pixel.
-      image(i, height - j - 1, 0, 0) = rgb_color.r;
-      image(i, height - j - 1, 0, 1) = rgb_color.g;
-      image(i, height - j - 1, 0, 2) = rgb_color.b;
+      image(i, y_coord, 0, 0) = rgb_color.r;
+      image(i, y_coord, 0, 1) = rgb_color.g;
+      image(i, y_coord, 0, 2) = rgb_color.b;
 
       x += increment;
     }
